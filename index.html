@@ -60,9 +60,78 @@
         let lastMoveTime = 0;
         let moveInterval = 150;
 
+        function createSnakeTexture(isHead) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            const baseColor = isHead ? '#4CAF50' : '#81C784';
+            const shadowColor = isHead ? '#388E3C' : '#4CAF50';
+            const highlightColor = isHead ? '#81C784' : '#A5D6A7';
+
+            // Background
+            ctx.fillStyle = baseColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw scales pattern (hexagonal or diamond)
+            const scaleSize = 16;
+            ctx.lineWidth = 2;
+
+            for (let y = 0; y <= canvas.height + scaleSize; y += scaleSize * 0.8) {
+                const offsetX = (Math.round(y / (scaleSize * 0.8)) % 2 === 0) ? 0 : scaleSize / 2;
+                for (let x = -scaleSize; x <= canvas.width + scaleSize; x += scaleSize) {
+                    ctx.beginPath();
+                    ctx.arc(x + offsetX, y, scaleSize * 0.6, 0, Math.PI, false); // Bottom curve
+                    ctx.fillStyle = baseColor;
+                    ctx.fill();
+
+                    // Shadow
+                    ctx.strokeStyle = shadowColor;
+                    ctx.stroke();
+
+                    // Inner highlight
+                    ctx.beginPath();
+                    ctx.arc(x + offsetX, y - 2, scaleSize * 0.5, 0, Math.PI, false);
+                    ctx.strokeStyle = highlightColor;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.lineWidth = 2; // Restore for next scale
+                }
+            }
+
+            // Head details (eyes/nostrils)
+            if (isHead) {
+                // Assuming snake moves along Z, +Z is forward, but rotation depends on geometry
+                // Let's add some distinct marks so we know it's the head
+                ctx.fillStyle = '#1B5E20';
+                // Eyes
+                ctx.beginPath();
+                ctx.arc(32, 32, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(96, 32, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 1);
+            return texture;
+        }
+
         // Materials
-        const headMaterial = new THREE.MeshPhongMaterial({ color: 0x4CAF50, shininess: 100 });
-        const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x81C784, shininess: 50 });
+        const headMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: createSnakeTexture(true),
+            shininess: 100
+        });
+        const bodyMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: createSnakeTexture(false),
+            shininess: 50
+        });
         const foodMaterial = new THREE.MeshPhongMaterial({ color: 0xff5252, shininess: 100, emissive: 0x440000 });
 
         function init() {
